@@ -16,10 +16,12 @@ allow {
 
 is_token_valid {
   token.valid
-  token.payload.nbf <= time.now_ns() < token.payload.exp
+  ## INFO: disable token expiration for demo
+  # token.payload.nbf <= time.now_ns() < token.payload.exp
 }
 
 action_denied {
+# action_allowed {
   http_request.method == "GET"
   token.payload.role == "guest"
   glob.match("/get*", [], http_request.path)
@@ -34,6 +36,7 @@ action_allowed {
 action_allowed {
   http_request.method == "POST"
   token.payload.role == "admin"
-  glob.match("/post", [], http_request.path)
-  lower(input.parsed_body.firstname) != base64url.decode(token.payload.sub)
+  glob.match("/post*", [], http_request.path)
+
+  # lower(input.parsed_body.firstname) == base64url.decode(token.payload.sub)
 }
