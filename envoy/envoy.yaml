@@ -44,21 +44,21 @@ static_resources:
                         x-forwarded-host: original-host-as-context  
                                           
           http_filters:  
-          - name: envoy.filters.http.lua
-            typed_config:
-              '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-              inlineCode: |
-                function envoy_on_request(request_handle)
-                  request_handle:logInfo('>>> LUA envoy_on_request Called')
-                  --buf = request_handle:body()
-                  --bufbytes = buf:getBytes(0, buf:length())
-                  --request_handle:logInfo(bufbytes)
-                end
+          # - name: envoy.filters.http.lua
+          #   typed_config:
+          #     '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+          #     inlineCode: |
+          #       function envoy_on_request(request_handle)
+          #         request_handle:logInfo('>>> LUA envoy_on_request Called')
+          #         --buf = request_handle:body()
+          #         --bufbytes = buf:getBytes(0, buf:length())
+          #         --request_handle:logInfo(bufbytes)
+          #       end
                 
-                function envoy_on_response(response_handle)
-                  response_handle:logInfo('>>> LUA envoy_on_response Called')
-                  response_handle:headers():add("X-Custom-Header-From-LUA", "bar")
-                end             
+          #       function envoy_on_response(response_handle)
+          #         response_handle:logInfo('>>> LUA envoy_on_response Called')
+          #         response_handle:headers():add("X-Custom-Header-From-LUA", "bar")
+          #       end             
  
           - name: envoy.filters.http.ext_authz
             typed_config:
@@ -66,7 +66,11 @@ static_resources:
               transport_api_version: V3
               grpc_service:
                 envoy_grpc:
-                  cluster_name: ext-authz               
+                  cluster_name: ext-authz
+                  
+              with_request_body:
+                max_request_bytes: 1024
+                allow_partial_message: true
           - name: envoy.filters.http.router
 
   clusters:

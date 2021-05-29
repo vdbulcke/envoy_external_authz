@@ -55,6 +55,21 @@ func (s *healthServer) Watch(in *healthpb.HealthCheckRequest, srv healthpb.Healt
 
 type AuthorizationServer struct{}
 
+func (a *AuthorizationServer) processBody(ctx context.Context, req *auth.CheckRequest) {
+
+	reqMetdata := req.GetAttributes().GetMetadataContext()
+
+	log.Println(reqMetdata.String())
+
+	payload := req.GetAttributes().GetRequest().GetHttp().GetBody()
+	if payload == "" {
+		log.Println("Request Body is empty")
+	} else {
+		log.Println(fmt.Sprintf("Req Body: %s", payload))
+	}
+
+}
+
 func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest) (*auth.CheckResponse, error) {
 	log.Println(">>> Authorization called check()")
 
@@ -69,6 +84,8 @@ func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest)
 		log.Println("Context Extensions: ")
 		log.Println((string(ct)))
 	}
+
+	a.processBody(ctx, req)
 
 	authHeader, ok := req.Attributes.Request.Http.Headers["authorization"]
 	var splitToken []string
