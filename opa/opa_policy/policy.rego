@@ -36,7 +36,7 @@ action_allowed {
 action_allowed {
   http_request.method == "POST"
   token.payload.role == "admin"
-  glob.match("/post*", [], http_request.path)
+  glob.match("/people*", [], http_request.path)
 
-  # lower(input.parsed_body.firstname) == base64url.decode(token.payload.sub)
+  lower(input.parsed_body.firstname) == token.payload.sub
 }

@@ -6,8 +6,6 @@ GID ?= $(shell id -g)
 create-opa: 
 	podman run -d  -v ${PWD}/opa_policy:/policy:z -v ${PWD}/opa_config:/config:z --network host --name opa -u ${UID}:${GID}  openpolicyagent/opa:latest-envoy run   --server --addr=localhost:8181 --set=plugins.envoy_ext_authz_grpc.addr=:9191 --set=decision_logs.console=true --ignore=.* /policy/policy.rego
 
-
-
 stop-opa: 
 	podman stop opa
 
@@ -21,7 +19,7 @@ remove-opa:
 	podman rm -f opa
 
 
-
+## Envoy
 create-envoy:
 	podman run -d  -v ${PWD}/envoy.yaml:/etc/envoy/envoy.yaml:z  --network host --name envoy-opa -u ${UID}:${GID}  envoyproxy/envoy-alpine:v1.18.3
 
@@ -37,3 +35,8 @@ restart-envoy:
 remove-envoy: 
 	podman rm -f envoy-opa
 
+
+
+## Rego 
+opa-eval: 
+	opa eval --data opa_policy/policy.rego --input opa_policy/input.json "data.envoy.authz.allow"
