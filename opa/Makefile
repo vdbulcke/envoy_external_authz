@@ -36,6 +36,21 @@ remove-envoy:
 	podman rm -f envoy-opa
 
 
+## Backend Echo Server
+create-backend: 
+	podman run -d --name backend-echo -p 3000:80  ealen/echo-server:0.5.0
+
+stop-backend: 
+	podman stop backend-echo
+
+start-backend: 
+	podman start backend-echo
+
+restart-backend: 
+	podman restart backend-echo
+
+remove-backend: 
+	podman rm -f backend-echo
 
 ## Rego 
 opa-eval: 
