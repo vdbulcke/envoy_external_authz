@@ -13,7 +13,7 @@ static_resources:
   listeners:
   - name: listener_0
     address:
-      socket_address: { address: 0.0.0.0, port_value: 8080 }
+      socket_address: { address: 0.0.0.0, port_value: 8443 }
 
     filter_chains:
     - filters:
@@ -30,7 +30,7 @@ static_resources:
               - match:
                   prefix: "/"
                 route:
-                  host_rewrite_literal: "server.domain.com"
+                  # host_rewrite_literal: "server.domain.com"
                   cluster: service_backend
                 request_headers_to_add:
                   - header:
@@ -67,12 +67,30 @@ static_resources:
               grpc_service:
                 envoy_grpc:
                   cluster_name: ext-authz
-                  
-              with_request_body:
-                max_request_bytes: 1024
-                allow_partial_message: true
-          - name: envoy.filters.http.router
 
+              include_peer_certificate: true
+              # with_request_body:
+              #   max_request_bytes: 1024
+              #   allow_partial_message: true
+          - name: envoy.filters.http.router
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          require_client_certificate: true
+          # ocsp_staple_policy: MUST_STAPLE
+          common_tls_context:
+            
+            tls_params: 
+              ## WARNING: RSA Client certificates are no longer supported in TLSv1.3
+              tls_maximum_protocol_version: TLSv1_2 
+            tls_certificates:
+              - certificate_chain: { filename: "/opt/certs/servercert.pem" }
+                private_key: { filename: "/opt/certs/serverkey.pem" }
+            validation_context:
+              trusted_ca:
+                filename: /opt/certs/cacert.pem
+            
   clusters:
   - name: service_backend
     connect_timeout: 2s
@@ -87,7 +105,7 @@ static_resources:
             address:
               socket_address:
                 address: 127.0.0.1
-                port_value: 11000
+                port_value: 3000
 
         
   - name: ext-authz

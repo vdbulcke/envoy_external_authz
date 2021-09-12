@@ -70,6 +70,11 @@ func (a *AuthorizationServer) processBody(ctx context.Context, req *auth.CheckRe
 
 }
 
+func (a *AuthorizationServer) validateX509Certificate(pemClientCert string) (bool, error) {
+	log.Println(fmt.Sprintf("Client cert: %s", pemClientCert))
+	return true, nil
+}
+
 func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest) (*auth.CheckResponse, error) {
 	log.Println(">>> Authorization called check()")
 
@@ -86,6 +91,51 @@ func (a *AuthorizationServer) Check(ctx context.Context, req *auth.CheckRequest)
 	}
 
 	a.processBody(ctx, req)
+
+	log.Println(req)
+
+	// Check Client TLS context
+	log.Println("TLS Certs: ")
+	pemClientCert := req.GetAttributes().GetSource().GetCertificate()
+	if pemClientCert != "" {
+		isOK, err := a.validateX509Certificate(pemClientCert)
+		if err != nil {
+			// some error handling
+			return &auth.CheckResponse{
+				Status: &rpcstatus.Status{
+					Code: int32(rpc.UNAUTHENTICATED),
+				},
+				HttpResponse: &auth.CheckResponse_DeniedResponse{
+					DeniedResponse: &auth.DeniedHttpResponse{
+						Status: &envoy_type.HttpStatus{
+							Code: envoy_type.StatusCode_Unauthorized,
+						},
+						Body: "Invalid X509 Client cert",
+					},
+				},
+			}, nil
+		}
+		if isOK {
+			return &auth.CheckResponse{
+				Status: &rpcstatus.Status{
+					Code: int32(rpc.OK),
+				},
+				HttpResponse: &auth.CheckResponse_OkResponse{
+					OkResponse: &auth.OkHttpResponse{
+						Headers: []*core.HeaderValueOption{
+							{
+								Header: &core.HeaderValue{
+									Key:   "x-client-cert",
+									Value: pemClientCert,
+								},
+							},
+						},
+					},
+				},
+			}, nil
+		}
+
+	}
 
 	authHeader, ok := req.Attributes.Request.Http.Headers["authorization"]
 	var splitToken []string
